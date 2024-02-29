@@ -1,0 +1,60 @@
+# we can also scale by using this option below
+# docker-compose up --scale chrome 2 --scale firefox 2 -d
+
+version: "3"
+services:
+  hub:
+    image: selenium/hub:4.17
+    ports:
+      - 4444:4444
+
+  chrome:
+    image: selenium/node-chrome:4.17
+    shm_size: '1g'
+    depends_on:
+      - hub
+    deploy:
+      replicas: 1
+    environment:
+      - SE_EVENT_BUS_HOST=hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+      - SE_NODE_MAX_SESSIONS=1
+      - SE_VNC_NO_PASSWORD=1
+#  firefox:
+#    image: selenium/node-firefox:4.17
+#    shm_size: '2g'
+#    depends_on:
+#      - hub
+#    deploy:
+#      replicas: 0
+#    environment:
+#      - SE_EVENT_BUS_HOST=hub
+#      - SE_EVENT_BUS_PUBLISH_PORT=4442
+#      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+#      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+#      - SE_NODE_MAX_SESSIONS=1
+#      - SE_VNC_NO_PASSWORD=1
+  vendor-portal:
+    image: vthakur239/selenium
+    depends_on:
+      - chrome
+    environment:
+      - BROWSER=chrome
+      - HUB_HOST=hub
+      - THREAD_COUNT=1
+      - TEST_SUITE=vendor-portal.xml
+    volumes:
+      - ./output/vendor-portal:/home/vthakur/workspace/docker/sel-docker-jenkins/test-output
+  flight-reservation:
+      image: vthakur239/selenium
+      depends_on:
+        - chrome
+      environment:
+        - BROWSER=chrome
+        - HUB_HOST=hub
+        - THREAD_COUNT=1
+        - TEST_SUITE=flight-reservation.xml
+      volumes:
+        - ./output/flight-reservation:/home/vthakur/workspace/docker/sel-docker-jenkins/test-output
